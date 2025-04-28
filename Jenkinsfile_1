@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'INSTANCE_ID', defaultValue: '', description: 'Enter EC2 Instance ID')
+    }
+
+    environment {
+        AWS_REGION = 'eu-north-1'
+    }
+
+    stages {
+        stage('Start EC2 Instance') {
+            steps {
+                echo "Starting EC2 Instance ${params.INSTANCE_ID}..."
+                sh '''
+                    aws ec2 start-instances --instance-ids ${INSTANCE_ID} --region ${AWS_REGION}
+                    aws ec2 wait instance-running --instance-ids ${INSTANCE_ID} --region ${AWS_REGION}
+                '''
+            }
+        }
+
+        stage('Work') {
+            steps {
+                echo 'Sleeping for 30 seconds...'
+                sh 'sleep 30'
+            }
+        }
+
+        stage('Stop EC2 Instance') {
+            steps {
+                echo "Stopping EC2 Instance ${params.INSTANCE_ID}..."
+                sh '''
+                    aws ec2 stop-instances --instance-ids ${INSTANCE_ID} --region ${AWS_REGION}
+                    aws ec2 wait instance-stopped --instance-ids ${INSTANCE_ID} --region ${AWS_REGION}
+                '''
+            }
+        }
+    }
+}
